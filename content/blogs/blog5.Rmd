@@ -4,6 +4,7 @@ author: "Balint Szutor and Balint Nyakas"
 date: '2020 március 29 '
 output: html_document
 runtime: shiny
+slug: blog5
 ---
 
 ```{r setup, include=FALSE}
