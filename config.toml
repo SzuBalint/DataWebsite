@@ -94,7 +94,7 @@ disqusShortname = ""
     [[params.tiles.showcase]]
       title = "Moscow real estate"
       subtitle = "Hungarian infographics of Moscow"
-      image = "content/projects/project 1/cover.jpg"
+      image = "cover.jpg"
       url = "content/projects/project 1"
 
     [[params.tiles.showcase]]
