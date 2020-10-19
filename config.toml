@@ -92,8 +92,8 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
-      title = "Aliquam"
-      subtitle = "Ipsum Dolor Sit Amet"
+      title = "Moscow real estate"
+      subtitle = "Hungarian infographics of Moscow"
       image = "pic01.jpg"
       url = "blogs/projects/project 1"
 
