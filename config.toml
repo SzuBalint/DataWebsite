@@ -92,16 +92,16 @@ disqusShortname = ""
     # Display your showcases here.
     
     [[params.tiles.showcase]]
-      title = "Moscow real estate"
-      subtitle = "Hungarian infographics of Moscow"
+      title = "Network science"
+      subtitle = "Network of restaurants around Deak Ferenc square\nBasic recommendation algorithm"
       image = "network.jpg"
       url = "projects/project1"
 
     [[params.tiles.showcase]]
-      title = "Tempus"
-      subtitle = "Feugiat Amet Tempus"
-      image = "pic02.jpg"
-      url = "blogs/tempus"
+      title = "Moscow districs"
+      subtitle = "Hungarian inforgraphics about Moscow\nwith models about services there"
+      image = "cover.jpg"
+      url = "https://balintszut.shinyapps.io/infograph/?fbclid=IwAR1LPu1asj-Q-1FI-zMY_X-6VD3mjSs01H-L05bGcEEkrIcvw76xpdFZClw"
 
     [[params.tiles.showcase]]
       title = "Magna"
