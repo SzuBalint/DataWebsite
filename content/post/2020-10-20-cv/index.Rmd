@@ -1,0 +1,16 @@
+---
+title: Balint Szutor' CV
+author: Balint Szutor
+date: '2020-10-20'
+slug: CV
+categories:
+  - R
+tags:
+  - R Markdown
+description: ''
+image: ''
+keywords: ''
+draft: no
+---
+
+This is my CV
