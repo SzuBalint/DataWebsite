@@ -49,11 +49,11 @@ disqusShortname = ""
 
     [[params.navigation.links]]
       name = "Network science"
-      url = "projects/projects1"
+      url = "projects/project1"
 
     [[params.navigation.links]]
       name = "German consumption"
-      url = "projects/projects2"
+      url = "projects/project2"
 
     [[params.navigation.links]]
       name = "Moscow districts"
@@ -61,7 +61,7 @@ disqusShortname = ""
 
     [[params.navigation.links]]
       name = "My resumé"
-      url = "projects/projects3"
+      url = "projects/project3"
 
 
   # Banner section
