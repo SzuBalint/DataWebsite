@@ -169,7 +169,7 @@ names(Data)<- c("Wholesale","Consumption","Wages")
 Data <- Data[-nrow(Data),]
 Dates <- Dates[-length(Dates)]
 
-MiceData <- mice(Data,m=5,maxit=50,meth='pmm',seed=500)
+MiceData <- mice(Data,m=5,maxit=50,meth='pmm',seed=500,print=FALSE)
 
 Series <- complete(MiceData,1)
 
@@ -179,7 +179,7 @@ Series <- xts(x = Series[,-1],order.by = Series$Dates)
 autoplot.zoo(Series)
 
 names(Loans) <- c("Date","Loans","CrdtCons","Lnd4House","Other")
-MiceData <- mice(Loans[,-1],m=5,maxit=50,meth='pmm',seed=500)
+MiceData <- mice(Loans[,-1],m=5,maxit=50,meth='pmm',seed=500,print=FALSE)
 Loans <- cbind(Loans$Date,complete(MiceData, 1))
 names(Loans) <- c("Date","Loans","CrdtCons","Lnd4House","Other")
 
