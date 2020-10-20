@@ -1,8 +1,10 @@
 ---
-title: "index"
+title: "My resumé"
 author: "Balint Szutor"
 date: '2020 October 20 '
 output: html_document
 ---
+
+*If you have any suggestions, please get in touch*
 
 <img src="BalintSzutorCV.jpg" alt="drawing" width="800"/>

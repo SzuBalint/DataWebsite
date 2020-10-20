@@ -17,33 +17,16 @@ output:
 library(DescTools)</code></pre>
 <pre><code>## Warning: package &#39;DescTools&#39; was built under R version 4.0.3</code></pre>
 <pre class="r"><code>library(readxl)
-library(xts)</code></pre>
-<pre><code>## Loading required package: zoo</code></pre>
-<pre><code>## 
-## Attaching package: &#39;zoo&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     as.Date, as.Date.numeric</code></pre>
-<pre class="r"><code>library(zoo)
+library(xts)
+library(zoo)
 library(mondate)</code></pre>
 <pre><code>## Warning: package &#39;mondate&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## 
-## Attaching package: &#39;mondate&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:base&#39;:
-## 
-##     as.difftime</code></pre>
 <pre class="r"><code>#  &lt;------------------&gt; CONSUMPTION
 
 #Formating the excel file to a data frame
-Cons &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 1, col_names = FALSE,na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
-<pre><code>## New names:
-## * `` -&gt; ...1
-## * `` -&gt; ...2
-## * `` -&gt; ...3
-## * `` -&gt; ...4
-## * `` -&gt; ...5
-## * ...</code></pre>
-<pre class="r"><code>Cons &lt;- t(Cons)
+Cons &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 1, col_names = FALSE,na = c(&quot;:&quot;,&quot;;&quot;))
+
+Cons &lt;- t(Cons)
 
 Cons &lt;- Cons[-1,]
 Cons1 &lt;- as.data.frame(Cons[,1])
@@ -60,14 +43,9 @@ Data &lt;- Cons$Consumption
 #  &lt;------------------&gt; LOANS
 
 
-Loans &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 2, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
-<pre><code>## New names:
-## * `` -&gt; ...1
-## * `` -&gt; ...2
-## * `` -&gt; ...3
-## * `` -&gt; ...4
-## * `` -&gt; ...5</code></pre>
-<pre class="r"><code>colnames(Loans)&lt;- Loans[1,]
+Loans &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 2, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))
+
+colnames(Loans)&lt;- Loans[1,]
 Loans &lt;- Loans[-1,]
 
 #Without this line of code I could not make the as.Date function work
@@ -83,15 +61,9 @@ Loans$`Other lending` &lt;- as.numeric(Loans$`Other lending`)
 
 #  &lt;------------------&gt; WAGES
 
-Wages &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 3, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
-<pre><code>## New names:
-## * `` -&gt; ...1
-## * `` -&gt; ...2
-## * `` -&gt; ...3
-## * `` -&gt; ...4
-## * `` -&gt; ...5
-## * ...</code></pre>
-<pre class="r"><code>Wages &lt;- t(Wages)
+Wages &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 3, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))
+
+Wages &lt;- t(Wages)
 
 #Renamed the columns that will come handy later
 Wages[1,1] &lt;- &quot;Date&quot;
@@ -122,11 +94,9 @@ Data &lt;- cbind(Data, Wages$Germany)
 #  &lt;------------------&gt; WHOLESALE
 
 
-whsl &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 4, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
-<pre><code>## New names:
-## * `` -&gt; ...1
-## * `` -&gt; ...2</code></pre>
-<pre class="r"><code>colnames(whsl)&lt;- c(&quot;Date&quot;,&quot;Wholesale&quot;)
+whsl &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 4, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))
+
+colnames(whsl)&lt;- c(&quot;Date&quot;,&quot;Wholesale&quot;)
 whsl &lt;- whsl[-1,]
 
 whsl$Wholesale &lt;- as.numeric(whsl$Wholesale)
@@ -171,7 +141,6 @@ ggplot(Wages, aes(y=Germany)) +
 <pre class="r"><code>ggplot(whsl, aes(y=whsl$Wholesale)) + 
   geom_boxplot() +
   theme_minimal()</code></pre>
-<pre><code>## Don&#39;t know how to automatically pick scale for object of type xts/zoo. Defaulting to continuous.</code></pre>
 <pre><code>## Warning: Removed 7 rows containing non-finite values (stat_boxplot).</code></pre>
 <p><img src="index_files/figure-html/plots-5.png" width="672" /></p>
 </div>
@@ -204,11 +173,6 @@ for (col in 2:ncol(Loans)){
 <h1>Predicting missing values</h1>
 <pre class="r"><code>library(mice)</code></pre>
 <pre><code>## Warning: package &#39;mice&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## 
-## Attaching package: &#39;mice&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     cbind, rbind</code></pre>
 <pre class="r"><code># I used MICE to predict missing values as I did not want to lose all the information and continuity of my original data set
 
 #Also MICE seemed to be a verified way to predict missing values according to the reading I did
@@ -477,7 +441,7 @@ Series &lt;- cbind(Dates, Series)
 Series &lt;- xts(x = Series[,-1],order.by = Series$Dates)
 
 autoplot.zoo(Series)</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/mice-1.png" width="672" /></p>
 <pre class="r"><code>names(Loans) &lt;- c(&quot;Date&quot;,&quot;Loans&quot;,&quot;CrdtCons&quot;,&quot;Lnd4House&quot;,&quot;Other&quot;)
 MiceData &lt;- mice(Loans[,-1],m=5,maxit=50,meth=&#39;pmm&#39;,seed=500)</code></pre>
 <pre><code>## 
@@ -747,11 +711,6 @@ for (i in 2:ncol(Loans)) {
 <h1>Detrending and seasonality</h1>
 <pre class="r"><code>library(aTSA)</code></pre>
 <pre><code>## Warning: package &#39;aTSA&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## 
-## Attaching package: &#39;aTSA&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:graphics&#39;:
-## 
-##     identify</code></pre>
 <pre class="r"><code>library(mFilter)</code></pre>
 <pre><code>## Warning: package &#39;mFilter&#39; was built under R version 4.0.3</code></pre>
 <pre class="r"><code>Series &lt;- ts(Series,start=c(1995,1),frequency = 4)
@@ -843,56 +802,27 @@ adf.test(Stac[,1])</code></pre>
 ## ---- 
 ## Note: in fact, p.value = 0.01 means p.value &lt;= 0.01</code></pre>
 <pre class="r"><code>plot(Noseason[,2])</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/seasonality-1.png" width="672" /></p>
 <pre class="r"><code>plot(Stac[,2])</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+<p><img src="index_files/figure-html/seasonality-2.png" width="672" /></p>
 </div>
 <div id="estimating-model" class="section level1">
 <h1>Estimating model</h1>
-<pre class="r"><code>library(forecast)</code></pre>
-<pre><code>## Registered S3 method overwritten by &#39;quantmod&#39;:
-##   method            from
-##   as.zoo.data.frame zoo</code></pre>
-<pre><code>## 
-## Attaching package: &#39;forecast&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:aTSA&#39;:
-## 
-##     forecast</code></pre>
-<pre><code>## The following object is masked from &#39;package:DescTools&#39;:
-## 
-##     BoxCox</code></pre>
-<pre class="r"><code>library(vars)</code></pre>
+<pre class="r"><code>library(forecast)
+library(vars)</code></pre>
 <pre><code>## Warning: package &#39;vars&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## Loading required package: MASS</code></pre>
-<pre><code>## Loading required package: strucchange</code></pre>
 <pre><code>## Warning: package &#39;strucchange&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## Loading required package: sandwich</code></pre>
 <pre><code>## Warning: package &#39;sandwich&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## Loading required package: urca</code></pre>
-<pre><code>## Loading required package: lmtest</code></pre>
-<pre><code>## 
-## Attaching package: &#39;vars&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:aTSA&#39;:
-## 
-##     arch.test</code></pre>
-<pre><code>## The following object is masked from &#39;package:DescTools&#39;:
-## 
-##     Phi</code></pre>
-<pre class="r"><code>library(car)</code></pre>
-<pre><code>## Loading required package: carData</code></pre>
-<pre><code>## 
-## Attaching package: &#39;car&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:DescTools&#39;:
-## 
-##     Recode</code></pre>
-<pre class="r"><code>#Visualizing the data to get a grasp on what ARIMA model would fit the most
+<pre class="r"><code>library(car)
+
+#Visualizing the data to get a grasp on what ARIMA model would fit the most
 acf(Stac[,2])</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<p><img src="index_files/figure-html/model-1.png" width="672" /></p>
 <pre class="r"><code>pacf(Stac[,2], lag.max = 50)</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-3-2.png" width="672" /></p>
+<p><img src="index_files/figure-html/model-2.png" width="672" /></p>
 <pre class="r"><code>unimodel &lt;- auto.arima(Stac[,2],ic = &#39;aic&#39;, seasonal = FALSE)
 plot(forecast(unimodel,h=20))</code></pre>
-<p><img src="index_files/figure-html/unnamed-chunk-3-3.png" width="672" /></p>
+<p><img src="index_files/figure-html/model-3.png" width="672" /></p>
 <pre class="r"><code>summary(unimodel)</code></pre>
 <pre><code>## Series: Stac[, 2] 
 ## ARIMA(0,0,1) with non-zero mean 
