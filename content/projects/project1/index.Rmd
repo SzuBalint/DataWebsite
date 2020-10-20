@@ -1,8 +1,9 @@
 ---
 title: "Network Science"
 author: "Balint Szutor"
-date: '2020 június 7 '
+date: '2020 June 7 '
 output: html_document
+slug: project1
 ---
 
 ```{r setup, include=FALSE}
@@ -15,8 +16,6 @@ library(readxl)
 *Some of the data was too large to upload it to github, it can be found here:*
 *https://drive.google.com/drive/folders/17hhYiwjyyUy8zcGM0Iib7MJGn4zDRKac?usp=sharing*
 
-# Final project
-
 ## My project has 2 parts:
 
 * An analysis of the network of restaurants around Deak Ferenc square
@@ -26,7 +25,7 @@ In this first half I will go over the network, looking for interesting facts. Pl
 
 ```{r data}
 # Preparing data
-data_coor <- fread("Network/restaurant_info_coor_all.csv",
+data_coor <- fread("data/restaurant_info_coor_all.csv",
                    sep=';', encoding='UTF-8')
 
 # Neighborhood of Deak Ferenc square
@@ -35,7 +34,7 @@ data_coor <- data_coor[data_coor$LAT < 47.5003 & data_coor$LAT > 47.4969]
 data_coor <- data_coor[data_coor$LON < 19.058747 & data_coor$LON > 19.049391]
 
 # Network
-data <- fread("Network/restaurant_network_name.csv",
+data <- fread("data/restaurant_network_name.csv",
               sep=';', encoding='UTF-8')
 
 data <- data[c(data$First) %in% c(unique(data_coor$NAME))]
@@ -203,10 +202,10 @@ For the recommendation logic, I will create a network with weights showing how m
 
 ```{r loadreccdata}
 # The network's weights
-rest_weight <- fread("Network/restaurant_network_name.csv",
+rest_weight <- fread("data/restaurant_network_name.csv",
                  sep=';', encoding='UTF-8')
 
-rest_dummy <- fread("Network/restaurant_dummy_name.csv",
+rest_dummy <- fread("data/restaurant_dummy_name.csv",
                     sep=';', encoding='UTF-8')
 
 number_rest <- data.table(table(rest_dummy$NAME))[order(-N)]
@@ -232,7 +231,7 @@ loadGroupRating <- function(path) {
 
 mergeGroupRating <- function(path) {  
   
-  f <- loadGroupRating("Network/Ratings/Group")
+  f <- loadGroupRating("data/Group")
   
   rest_nm <- data.table(f[[1]]$NAME)
   names(rest_nm) <- c('NAME')
