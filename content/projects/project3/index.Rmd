@@ -1,0 +1,8 @@
+---
+title: "index"
+author: "Balint Szutor"
+date: '2020 október 20 '
+output: html_document
+---
+
+<img src="BalintSzutorCV.jpg" alt="drawing" width="800"/>

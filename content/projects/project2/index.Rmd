@@ -1,0 +1,304 @@
+---
+title: "Econometrics test"
+author: "Balint Szutor"
+date: '2019 augusztus 16 '
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+##Open excel file, prepare data
+```{r setup, include=TRUE}
+
+#I am using my laptop and desktop with two different wds
+wd <- try(setwd("C:/Users/Bálint/OneDrive/Projekt/ISGModelling"))
+
+if (class(wd)=="try-error") {
+setwd("C:/Users/Ildiko/OneDrive/Projekt/ISGModelling")
+} else {
+setwd(wd)
+}
+
+#Libraries
+
+library(DescTools)
+library(readxl)
+library(xts)
+library(zoo)
+library(mondate)
+
+#  <------------------> CONSUMPTION
+
+#Formating the excel file to a data frame
+Cons <- read_xlsx("CleanExcelData.xlsx",sheet = 1, col_names = FALSE,na = c(":",";"))
+
+Cons <- t(Cons)
+
+Cons <- Cons[-1,]
+Cons1 <- as.data.frame(Cons[,1])
+Cons <- cbind(Cons1,as.numeric(Cons[,2]))
+  remove(Cons1)
+names(Cons) <- c("Date","Consumption")
+
+#Formating dates
+Cons$Date <- as.Date(as.yearqtr(Cons$Date, format = "%YQ%q"))
+Dates <- as.Date(as.yearqtr(Cons$Date, format = "%YQ%q"))
+
+Data <- Cons$Consumption
+
+#  <------------------> LOANS
+
+
+Loans <- read_xlsx("CleanExcelData.xlsx",sheet = 2, col_names = FALSE, na = c(":",";"))
+
+colnames(Loans)<- Loans[1,]
+Loans <- Loans[-1,]
+
+#Without this line of code I could not make the as.Date function work
+Sys.setlocale("LC_TIME", "C")
+Loans$Date <- as.Date(paste0(as.character(Loans$Date),"01"),format='%Y%b%d')
+
+#Converting columns to numeric format 
+Loans$Loans <- as.numeric(Loans$Loans)
+Loans$`Credit for consumption` <- as.numeric(Loans$`Credit for consumption`)
+Loans$`Lending for house purchase` <- as.numeric(Loans$`Lending for house purchase`)
+Loans$`Other lending` <- as.numeric(Loans$`Other lending`)
+
+#  <------------------> WAGES
+
+Wages <- read_xlsx("CleanExcelData.xlsx",sheet = 3, col_names = FALSE, na = c(":",";"))
+
+Wages <- t(Wages)
+
+#Renamed the columns that will come handy later
+Wages[1,1] <- "Date"
+Wages[1,12] <- "Germany"
+colnames(Wages)<- Wages[1,]
+Wages <- Wages[-1,]
+Wages <- as.data.frame(Wages)
+
+Wages1 <- Wages[,1]
+Wages[] <- lapply(Wages, function(x) as.numeric(as.character(x)))
+Wages[,1]<- Wages1
+remove(Wages1)
+
+# nrow(Wages)
+
+#Find where a row is missing
+  # autoplot(Wages$Germany)
+  #A spike is missing around 2002 making it easy to find that 2002Q4 is missing
+
+Wages$Date <- as.Date(as.yearqtr(Wages$Date, format = "%YQ%q"))
+  Wages <- rbind(Wages[1:32,],rep(NA,ncol(Wages)),Wages[-(1:32),])
+  Wages[33,1] <- as.Date("2002-10-01")
+
+Data <- cbind(Data, Wages$Germany)  
+
+#  <------------------> WHOLESALE
+
+
+whsl <- read_xlsx("CleanExcelData.xlsx",sheet = 4, col_names = FALSE, na = c(":",";"))
+
+colnames(whsl)<- c("Date","Wholesale")
+whsl <- whsl[-1,]
+
+whsl$Wholesale <- as.numeric(whsl$Wholesale)
+
+whsl$Date <- as.Date(paste0(as.character(gsub("M","",whsl$Date)), "01"), format="%Y%m%d")
+
+#I need xts object to use apply.quarterly function 
+whsl <- xts(x = whsl[,-1],order.by = whsl$Date)
+
+#Losing some information but making my predictions more constant
+whsl <- apply.quarterly(whsl, FUN = "sum", na.rm = FALSE)
+
+# JOINING DATA to create a data.frame with all the time serieses
+
+Data <- cbind(whsl$Wholesale,Data)  
+  
+autoplot.zoo(Data)
+```
+
+#Visualizing my data
+```{r plots}
+library(ggplot2)
+
+ggplot(Wages, aes(y=Germany)) + 
+  geom_boxplot() +
+  theme_minimal()
+
+autoplot.zoo(Cons)
+ggplot(Cons, aes(y=Cons[,1])) + 
+  geom_boxplot() +
+  theme_minimal()
+
+autoplot.zoo(whsl)
+ggplot(whsl, aes(y=whsl$Wholesale)) + 
+  geom_boxplot() +
+  theme_minimal()
+
+```
+
+#Outliers
+```{r modelling}
+#Because of time limitations I will use the IQR method to find and remove outliers
+
+for (col in 1:ncol(Data)){
+  trim <- Data[,col]
+  qnt <- quantile(trim, probs=c(.25, .75), na.rm = T)
+  caps <- quantile(trim, probs=c(.05, .95), na.rm = T)
+  dist <- 1.5 * IQR(trim, na.rm = T)
+  # These outliers would disort my models, as they did not fit my model assumptions therefore I remove them and predict a value in their place
+    trim[trim < (qnt[1] - dist)] <- NA
+    trim[trim > (qnt[2] + dist)] <- NA
+  Data[,col] <- trim
+}
+
+for (col in 2:ncol(Loans)){
+  trim <- as.matrix(Loans[,col])
+  qnt <- quantile(trim, probs=c(.25, .75), na.rm = T)
+  caps <- quantile(trim, probs=c(.05, .95), na.rm = T)
+  dist <- 1.5 * IQR(trim, na.rm = T)
+  trim[trim < (qnt[1] - dist)] <- NA
+  trim[trim > (qnt[2] + dist)] <- NA
+  Loans[,col] <- as.numeric(trim)
+}
+
+```
+
+#Predicting missing values
+```{r}
+library(mice)
+# I used MICE to predict missing values as I did not want to lose all the information and continuity of my original data set
+
+#Also MICE seemed to be a verified way to predict missing values according to the reading I did
+
+
+names(Data)<- c("Wholesale","Consumption","Wages")
+Data <- Data[-nrow(Data),]
+Dates <- Dates[-length(Dates)]
+
+MiceData <- mice(Data,m=5,maxit=50,meth='pmm',seed=500)
+
+Series <- complete(MiceData,1)
+
+Series <- cbind(Dates, Series)
+Series <- xts(x = Series[,-1],order.by = Series$Dates)
+
+autoplot.zoo(Series)
+
+names(Loans) <- c("Date","Loans","CrdtCons","Lnd4House","Other")
+MiceData <- mice(Loans[,-1],m=5,maxit=50,meth='pmm',seed=500)
+Loans <- cbind(Loans$Date,complete(MiceData, 1))
+names(Loans) <- c("Date","Loans","CrdtCons","Lnd4House","Other")
+
+#Aggregate monthly data to quarterly
+Loans <- xts(x = Loans[,-1],order.by = Loans$Date)
+Loanstemp <- apply.quarterly(Loans[,1], FUN = "sum", na.rm = FALSE)
+for (i in 2:ncol(Loans)) {
+  tempLoan <- apply.quarterly(Loans[,i], FUN = "sum", na.rm = FALSE)
+  Loanstemp <- cbind(Loanstemp, tempLoan)
+}
+
+```
+
+#Detrending and seasonality
+```{r}
+library(aTSA)
+library(mFilter)
+
+Series <- ts(Series,start=c(1995,1),frequency = 4)
+Noseason <- Series
+
+for (var in 1:ncol(Series)){
+  seas <- decompose(Series[,var])
+  Noseason[,var] <- Series[,var] - seas$seasonal
+}
+
+#Dickey-fuller tests
+# adf.test(Noseason[,1])
+# adf.test(Noseason[,2])
+# adf.test(Noseason[,3])
+
+Stac <- diff(Noseason)
+
+#Data seems to be stationary
+adf.test(Stac[,1])
+adf.test(Stac[,2])
+adf.test(Stac[,3])
+
+plot(Noseason[,2])
+plot(Stac[,2])
+```
+
+#Estimating model
+```{r}
+library(forecast)
+library(vars)
+library(car)
+
+#Visualizing the data to get a grasp on what ARIMA model would fit the most
+acf(Stac[,2])
+pacf(Stac[,2], lag.max = 50)
+
+unimodel <- auto.arima(Stac[,2],ic = 'aic', seasonal = FALSE)
+plot(forecast(unimodel,h=20))
+summary(unimodel)
+
+durbinWatsonTest(as.numeric(unimodel$residuals))
+
+adf.test(as.numeric(unimodel$residuals))
+#Not cointegrated
+
+VARnumber <- VARselect(Stac, lag.max =6)
+VARmodel <- VAR(Stac, p=as.numeric(VARnumber$selection[1]), ic = c("aic"))
+
+#Looking for a value close to 2 to test residuals autocorrelation
+durbinWatsonTest(VARmodel$varresult$Consumption$residuals)
+
+adf.test(VARmodel$varresult$Consumption$residuals)
+#Not cointegrated
+```
+
+#Building model including Loans data
+```{r}
+library(aTSA)
+library(mFilter)
+
+a <- nrow(Series) - nrow(Loanstemp)
+Fullseries <- cbind(Series[-c(1:a),],Loanstemp)
+Fullseries <- ts(Fullseries,start=c(2003,1),frequency = 4)
+
+Noseason <- Fullseries
+
+for (var in 1:ncol(Fullseries)){
+  seas <- decompose(Fullseries[,var])
+  Noseason[,var] <- Fullseries[,var] - seas$seasonal
+}
+
+#Dickey-fuller tests like previously
+
+Stac <- diff(diff(Noseason))
+
+# adfTest(Stac[,1])
+# adfTest(Stac[,2])
+# adfTest(Stac[,3])
+# adfTest(Stac[,4])
+# adfTest(Stac[,5])
+# adfTest(Stac[,6])
+# adfTest(Stac[,7])
+
+#Data seems to be stationary according to a new dickey fuller test
+
+VARnumber <- VARselect(Stac, lag.max =6)
+VARmodel <- VAR(Stac, p=as.numeric(VARnumber$selection[1]), ic = c("aic"))
+
+VARmodel$varresult$Consumption
+
+#Looking for a value close to 2 to test residuals autocorrelation
+durbinWatsonTest(VARmodel$varresult$Consumption$residuals)
+
+adf.test(VARmodel$varresult$Consumption$residuals)
+#Not cointegrated
+```
