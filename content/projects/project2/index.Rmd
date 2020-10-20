@@ -10,16 +10,6 @@ output:
 
 ##Open excel file, prepare data
 ```{r setup, include=TRUE}
-
-#I am using my laptop and desktop with two different wds
-wd <- try(setwd("C:/Users/Bálint/OneDrive/Projekt/ISGModelling"))
-
-if (class(wd)=="try-error") {
-setwd("C:/Users/Ildiko/OneDrive/Projekt/ISGModelling")
-} else {
-setwd(wd)
-}
-
 #Libraries
 
 library(DescTools)

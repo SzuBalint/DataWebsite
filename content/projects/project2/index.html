@@ -1,0 +1,1056 @@
+---
+title: "Econometrics test"
+author: "Balint Szutor"
+date: '2019 augusztus 16 '
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+
+
+<div id="open-excel-file-prepare-data" class="section level2">
+<h2>Open excel file, prepare data</h2>
+<pre class="r"><code>#Libraries
+
+library(DescTools)</code></pre>
+<pre><code>## Warning: package &#39;DescTools&#39; was built under R version 4.0.3</code></pre>
+<pre class="r"><code>library(readxl)
+library(xts)</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<pre class="r"><code>library(zoo)
+library(mondate)</code></pre>
+<pre><code>## Warning: package &#39;mondate&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;mondate&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:base&#39;:
+## 
+##     as.difftime</code></pre>
+<pre class="r"><code>#  &lt;------------------&gt; CONSUMPTION
+
+#Formating the excel file to a data frame
+Cons &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 1, col_names = FALSE,na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
+<pre><code>## New names:
+## * `` -&gt; ...1
+## * `` -&gt; ...2
+## * `` -&gt; ...3
+## * `` -&gt; ...4
+## * `` -&gt; ...5
+## * ...</code></pre>
+<pre class="r"><code>Cons &lt;- t(Cons)
+
+Cons &lt;- Cons[-1,]
+Cons1 &lt;- as.data.frame(Cons[,1])
+Cons &lt;- cbind(Cons1,as.numeric(Cons[,2]))
+  remove(Cons1)
+names(Cons) &lt;- c(&quot;Date&quot;,&quot;Consumption&quot;)
+
+#Formating dates
+Cons$Date &lt;- as.Date(as.yearqtr(Cons$Date, format = &quot;%YQ%q&quot;))
+Dates &lt;- as.Date(as.yearqtr(Cons$Date, format = &quot;%YQ%q&quot;))
+
+Data &lt;- Cons$Consumption
+
+#  &lt;------------------&gt; LOANS
+
+
+Loans &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 2, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
+<pre><code>## New names:
+## * `` -&gt; ...1
+## * `` -&gt; ...2
+## * `` -&gt; ...3
+## * `` -&gt; ...4
+## * `` -&gt; ...5</code></pre>
+<pre class="r"><code>colnames(Loans)&lt;- Loans[1,]
+Loans &lt;- Loans[-1,]
+
+#Without this line of code I could not make the as.Date function work
+Sys.setlocale(&quot;LC_TIME&quot;, &quot;C&quot;)</code></pre>
+<pre><code>## [1] &quot;C&quot;</code></pre>
+<pre class="r"><code>Loans$Date &lt;- as.Date(paste0(as.character(Loans$Date),&quot;01&quot;),format=&#39;%Y%b%d&#39;)
+
+#Converting columns to numeric format 
+Loans$Loans &lt;- as.numeric(Loans$Loans)
+Loans$`Credit for consumption` &lt;- as.numeric(Loans$`Credit for consumption`)
+Loans$`Lending for house purchase` &lt;- as.numeric(Loans$`Lending for house purchase`)
+Loans$`Other lending` &lt;- as.numeric(Loans$`Other lending`)
+
+#  &lt;------------------&gt; WAGES
+
+Wages &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 3, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
+<pre><code>## New names:
+## * `` -&gt; ...1
+## * `` -&gt; ...2
+## * `` -&gt; ...3
+## * `` -&gt; ...4
+## * `` -&gt; ...5
+## * ...</code></pre>
+<pre class="r"><code>Wages &lt;- t(Wages)
+
+#Renamed the columns that will come handy later
+Wages[1,1] &lt;- &quot;Date&quot;
+Wages[1,12] &lt;- &quot;Germany&quot;
+colnames(Wages)&lt;- Wages[1,]
+Wages &lt;- Wages[-1,]
+Wages &lt;- as.data.frame(Wages)
+
+Wages1 &lt;- Wages[,1]
+Wages[] &lt;- lapply(Wages, function(x) as.numeric(as.character(x)))</code></pre>
+<pre><code>## Warning in FUN(X[[i]], ...): NAs introduced by coercion</code></pre>
+<pre><code>## Warning in FUN(X[[i]], ...): NAs introduced by coercion</code></pre>
+<pre class="r"><code>Wages[,1]&lt;- Wages1
+remove(Wages1)
+
+# nrow(Wages)
+
+#Find where a row is missing
+  # autoplot(Wages$Germany)
+  #A spike is missing around 2002 making it easy to find that 2002Q4 is missing
+
+Wages$Date &lt;- as.Date(as.yearqtr(Wages$Date, format = &quot;%YQ%q&quot;))
+  Wages &lt;- rbind(Wages[1:32,],rep(NA,ncol(Wages)),Wages[-(1:32),])
+  Wages[33,1] &lt;- as.Date(&quot;2002-10-01&quot;)
+
+Data &lt;- cbind(Data, Wages$Germany)  
+
+#  &lt;------------------&gt; WHOLESALE
+
+
+whsl &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 4, col_names = FALSE, na = c(&quot;:&quot;,&quot;;&quot;))</code></pre>
+<pre><code>## New names:
+## * `` -&gt; ...1
+## * `` -&gt; ...2</code></pre>
+<pre class="r"><code>colnames(whsl)&lt;- c(&quot;Date&quot;,&quot;Wholesale&quot;)
+whsl &lt;- whsl[-1,]
+
+whsl$Wholesale &lt;- as.numeric(whsl$Wholesale)
+
+whsl$Date &lt;- as.Date(paste0(as.character(gsub(&quot;M&quot;,&quot;&quot;,whsl$Date)), &quot;01&quot;), format=&quot;%Y%m%d&quot;)
+
+#I need xts object to use apply.quarterly function 
+whsl &lt;- xts(x = whsl[,-1],order.by = whsl$Date)
+
+#Losing some information but making my predictions more constant
+whsl &lt;- apply.quarterly(whsl, FUN = &quot;sum&quot;, na.rm = FALSE)
+
+# JOINING DATA to create a data.frame with all the time serieses
+
+Data &lt;- cbind(whsl$Wholesale,Data)  
+  
+autoplot.zoo(Data)</code></pre>
+<pre><code>## Warning: Removed 1 row(s) containing missing values (geom_path).</code></pre>
+<p><img src="index_files/figure-html/setup-1.png" width="672" /></p>
+</div>
+<div id="visualizing-my-data" class="section level1">
+<h1>Visualizing my data</h1>
+<pre class="r"><code>library(ggplot2)
+
+ggplot(Wages, aes(y=Germany)) + 
+  geom_boxplot() +
+  theme_minimal()</code></pre>
+<pre><code>## Warning: Removed 5 rows containing non-finite values (stat_boxplot).</code></pre>
+<p><img src="index_files/figure-html/plots-1.png" width="672" /></p>
+<pre class="r"><code>autoplot.zoo(Cons)</code></pre>
+<pre><code>## Warning in data.frame(c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L, : row
+## names were found from a short variable and have been discarded</code></pre>
+<pre><code>## Warning: Removed 1 row(s) containing missing values (geom_path).</code></pre>
+<p><img src="index_files/figure-html/plots-2.png" width="672" /></p>
+<pre class="r"><code>ggplot(Cons, aes(y=Cons[,1])) + 
+  geom_boxplot() +
+  theme_minimal()</code></pre>
+<p><img src="index_files/figure-html/plots-3.png" width="672" /></p>
+<pre class="r"><code>autoplot.zoo(whsl)</code></pre>
+<pre><code>## Warning: Removed 1 row(s) containing missing values (geom_path).</code></pre>
+<p><img src="index_files/figure-html/plots-4.png" width="672" /></p>
+<pre class="r"><code>ggplot(whsl, aes(y=whsl$Wholesale)) + 
+  geom_boxplot() +
+  theme_minimal()</code></pre>
+<pre><code>## Don&#39;t know how to automatically pick scale for object of type xts/zoo. Defaulting to continuous.</code></pre>
+<pre><code>## Warning: Removed 7 rows containing non-finite values (stat_boxplot).</code></pre>
+<p><img src="index_files/figure-html/plots-5.png" width="672" /></p>
+</div>
+<div id="outliers" class="section level1">
+<h1>Outliers</h1>
+<pre class="r"><code>#Because of time limitations I will use the IQR method to find and remove outliers
+
+for (col in 1:ncol(Data)){
+  trim &lt;- Data[,col]
+  qnt &lt;- quantile(trim, probs=c(.25, .75), na.rm = T)
+  caps &lt;- quantile(trim, probs=c(.05, .95), na.rm = T)
+  dist &lt;- 1.5 * IQR(trim, na.rm = T)
+  # These outliers would disort my models, as they did not fit my model assumptions therefore I remove them and predict a value in their place
+    trim[trim &lt; (qnt[1] - dist)] &lt;- NA
+    trim[trim &gt; (qnt[2] + dist)] &lt;- NA
+  Data[,col] &lt;- trim
+}
+
+for (col in 2:ncol(Loans)){
+  trim &lt;- as.matrix(Loans[,col])
+  qnt &lt;- quantile(trim, probs=c(.25, .75), na.rm = T)
+  caps &lt;- quantile(trim, probs=c(.05, .95), na.rm = T)
+  dist &lt;- 1.5 * IQR(trim, na.rm = T)
+  trim[trim &lt; (qnt[1] - dist)] &lt;- NA
+  trim[trim &gt; (qnt[2] + dist)] &lt;- NA
+  Loans[,col] &lt;- as.numeric(trim)
+}</code></pre>
+</div>
+<div id="predicting-missing-values" class="section level1">
+<h1>Predicting missing values</h1>
+<pre class="r"><code>library(mice)</code></pre>
+<pre><code>## Warning: package &#39;mice&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;mice&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     cbind, rbind</code></pre>
+<pre class="r"><code># I used MICE to predict missing values as I did not want to lose all the information and continuity of my original data set
+
+#Also MICE seemed to be a verified way to predict missing values according to the reading I did
+
+
+names(Data)&lt;- c(&quot;Wholesale&quot;,&quot;Consumption&quot;,&quot;Wages&quot;)
+Data &lt;- Data[-nrow(Data),]
+Dates &lt;- Dates[-length(Dates)]
+
+MiceData &lt;- mice(Data,m=5,maxit=50,meth=&#39;pmm&#39;,seed=500)</code></pre>
+<pre><code>## 
+##  iter imp variable
+##   1   1  Wholesale  Consumption  Wages
+##   1   2  Wholesale  Consumption  Wages
+##   1   3  Wholesale  Consumption  Wages
+##   1   4  Wholesale  Consumption  Wages
+##   1   5  Wholesale  Consumption  Wages
+##   2   1  Wholesale  Consumption  Wages
+##   2   2  Wholesale  Consumption  Wages
+##   2   3  Wholesale  Consumption  Wages
+##   2   4  Wholesale  Consumption  Wages
+##   2   5  Wholesale  Consumption  Wages
+##   3   1  Wholesale  Consumption  Wages
+##   3   2  Wholesale  Consumption  Wages
+##   3   3  Wholesale  Consumption  Wages
+##   3   4  Wholesale  Consumption  Wages
+##   3   5  Wholesale  Consumption  Wages
+##   4   1  Wholesale  Consumption  Wages
+##   4   2  Wholesale  Consumption  Wages
+##   4   3  Wholesale  Consumption  Wages
+##   4   4  Wholesale  Consumption  Wages
+##   4   5  Wholesale  Consumption  Wages
+##   5   1  Wholesale  Consumption  Wages
+##   5   2  Wholesale  Consumption  Wages
+##   5   3  Wholesale  Consumption  Wages
+##   5   4  Wholesale  Consumption  Wages
+##   5   5  Wholesale  Consumption  Wages
+##   6   1  Wholesale  Consumption  Wages
+##   6   2  Wholesale  Consumption  Wages
+##   6   3  Wholesale  Consumption  Wages
+##   6   4  Wholesale  Consumption  Wages
+##   6   5  Wholesale  Consumption  Wages
+##   7   1  Wholesale  Consumption  Wages
+##   7   2  Wholesale  Consumption  Wages
+##   7   3  Wholesale  Consumption  Wages
+##   7   4  Wholesale  Consumption  Wages
+##   7   5  Wholesale  Consumption  Wages
+##   8   1  Wholesale  Consumption  Wages
+##   8   2  Wholesale  Consumption  Wages
+##   8   3  Wholesale  Consumption  Wages
+##   8   4  Wholesale  Consumption  Wages
+##   8   5  Wholesale  Consumption  Wages
+##   9   1  Wholesale  Consumption  Wages
+##   9   2  Wholesale  Consumption  Wages
+##   9   3  Wholesale  Consumption  Wages
+##   9   4  Wholesale  Consumption  Wages
+##   9   5  Wholesale  Consumption  Wages
+##   10   1  Wholesale  Consumption  Wages
+##   10   2  Wholesale  Consumption  Wages
+##   10   3  Wholesale  Consumption  Wages
+##   10   4  Wholesale  Consumption  Wages
+##   10   5  Wholesale  Consumption  Wages
+##   11   1  Wholesale  Consumption  Wages
+##   11   2  Wholesale  Consumption  Wages
+##   11   3  Wholesale  Consumption  Wages
+##   11   4  Wholesale  Consumption  Wages
+##   11   5  Wholesale  Consumption  Wages
+##   12   1  Wholesale  Consumption  Wages
+##   12   2  Wholesale  Consumption  Wages
+##   12   3  Wholesale  Consumption  Wages
+##   12   4  Wholesale  Consumption  Wages
+##   12   5  Wholesale  Consumption  Wages
+##   13   1  Wholesale  Consumption  Wages
+##   13   2  Wholesale  Consumption  Wages
+##   13   3  Wholesale  Consumption  Wages
+##   13   4  Wholesale  Consumption  Wages
+##   13   5  Wholesale  Consumption  Wages
+##   14   1  Wholesale  Consumption  Wages
+##   14   2  Wholesale  Consumption  Wages
+##   14   3  Wholesale  Consumption  Wages
+##   14   4  Wholesale  Consumption  Wages
+##   14   5  Wholesale  Consumption  Wages
+##   15   1  Wholesale  Consumption  Wages
+##   15   2  Wholesale  Consumption  Wages
+##   15   3  Wholesale  Consumption  Wages
+##   15   4  Wholesale  Consumption  Wages
+##   15   5  Wholesale  Consumption  Wages
+##   16   1  Wholesale  Consumption  Wages
+##   16   2  Wholesale  Consumption  Wages
+##   16   3  Wholesale  Consumption  Wages
+##   16   4  Wholesale  Consumption  Wages
+##   16   5  Wholesale  Consumption  Wages
+##   17   1  Wholesale  Consumption  Wages
+##   17   2  Wholesale  Consumption  Wages
+##   17   3  Wholesale  Consumption  Wages
+##   17   4  Wholesale  Consumption  Wages
+##   17   5  Wholesale  Consumption  Wages
+##   18   1  Wholesale  Consumption  Wages
+##   18   2  Wholesale  Consumption  Wages
+##   18   3  Wholesale  Consumption  Wages
+##   18   4  Wholesale  Consumption  Wages
+##   18   5  Wholesale  Consumption  Wages
+##   19   1  Wholesale  Consumption  Wages
+##   19   2  Wholesale  Consumption  Wages
+##   19   3  Wholesale  Consumption  Wages
+##   19   4  Wholesale  Consumption  Wages
+##   19   5  Wholesale  Consumption  Wages
+##   20   1  Wholesale  Consumption  Wages
+##   20   2  Wholesale  Consumption  Wages
+##   20   3  Wholesale  Consumption  Wages
+##   20   4  Wholesale  Consumption  Wages
+##   20   5  Wholesale  Consumption  Wages
+##   21   1  Wholesale  Consumption  Wages
+##   21   2  Wholesale  Consumption  Wages
+##   21   3  Wholesale  Consumption  Wages
+##   21   4  Wholesale  Consumption  Wages
+##   21   5  Wholesale  Consumption  Wages
+##   22   1  Wholesale  Consumption  Wages
+##   22   2  Wholesale  Consumption  Wages
+##   22   3  Wholesale  Consumption  Wages
+##   22   4  Wholesale  Consumption  Wages
+##   22   5  Wholesale  Consumption  Wages
+##   23   1  Wholesale  Consumption  Wages
+##   23   2  Wholesale  Consumption  Wages
+##   23   3  Wholesale  Consumption  Wages
+##   23   4  Wholesale  Consumption  Wages
+##   23   5  Wholesale  Consumption  Wages
+##   24   1  Wholesale  Consumption  Wages
+##   24   2  Wholesale  Consumption  Wages
+##   24   3  Wholesale  Consumption  Wages
+##   24   4  Wholesale  Consumption  Wages
+##   24   5  Wholesale  Consumption  Wages
+##   25   1  Wholesale  Consumption  Wages
+##   25   2  Wholesale  Consumption  Wages
+##   25   3  Wholesale  Consumption  Wages
+##   25   4  Wholesale  Consumption  Wages
+##   25   5  Wholesale  Consumption  Wages
+##   26   1  Wholesale  Consumption  Wages
+##   26   2  Wholesale  Consumption  Wages
+##   26   3  Wholesale  Consumption  Wages
+##   26   4  Wholesale  Consumption  Wages
+##   26   5  Wholesale  Consumption  Wages
+##   27   1  Wholesale  Consumption  Wages
+##   27   2  Wholesale  Consumption  Wages
+##   27   3  Wholesale  Consumption  Wages
+##   27   4  Wholesale  Consumption  Wages
+##   27   5  Wholesale  Consumption  Wages
+##   28   1  Wholesale  Consumption  Wages
+##   28   2  Wholesale  Consumption  Wages
+##   28   3  Wholesale  Consumption  Wages
+##   28   4  Wholesale  Consumption  Wages
+##   28   5  Wholesale  Consumption  Wages
+##   29   1  Wholesale  Consumption  Wages
+##   29   2  Wholesale  Consumption  Wages
+##   29   3  Wholesale  Consumption  Wages
+##   29   4  Wholesale  Consumption  Wages
+##   29   5  Wholesale  Consumption  Wages
+##   30   1  Wholesale  Consumption  Wages
+##   30   2  Wholesale  Consumption  Wages
+##   30   3  Wholesale  Consumption  Wages
+##   30   4  Wholesale  Consumption  Wages
+##   30   5  Wholesale  Consumption  Wages
+##   31   1  Wholesale  Consumption  Wages
+##   31   2  Wholesale  Consumption  Wages
+##   31   3  Wholesale  Consumption  Wages
+##   31   4  Wholesale  Consumption  Wages
+##   31   5  Wholesale  Consumption  Wages
+##   32   1  Wholesale  Consumption  Wages
+##   32   2  Wholesale  Consumption  Wages
+##   32   3  Wholesale  Consumption  Wages
+##   32   4  Wholesale  Consumption  Wages
+##   32   5  Wholesale  Consumption  Wages
+##   33   1  Wholesale  Consumption  Wages
+##   33   2  Wholesale  Consumption  Wages
+##   33   3  Wholesale  Consumption  Wages
+##   33   4  Wholesale  Consumption  Wages
+##   33   5  Wholesale  Consumption  Wages
+##   34   1  Wholesale  Consumption  Wages
+##   34   2  Wholesale  Consumption  Wages
+##   34   3  Wholesale  Consumption  Wages
+##   34   4  Wholesale  Consumption  Wages
+##   34   5  Wholesale  Consumption  Wages
+##   35   1  Wholesale  Consumption  Wages
+##   35   2  Wholesale  Consumption  Wages
+##   35   3  Wholesale  Consumption  Wages
+##   35   4  Wholesale  Consumption  Wages
+##   35   5  Wholesale  Consumption  Wages
+##   36   1  Wholesale  Consumption  Wages
+##   36   2  Wholesale  Consumption  Wages
+##   36   3  Wholesale  Consumption  Wages
+##   36   4  Wholesale  Consumption  Wages
+##   36   5  Wholesale  Consumption  Wages
+##   37   1  Wholesale  Consumption  Wages
+##   37   2  Wholesale  Consumption  Wages
+##   37   3  Wholesale  Consumption  Wages
+##   37   4  Wholesale  Consumption  Wages
+##   37   5  Wholesale  Consumption  Wages
+##   38   1  Wholesale  Consumption  Wages
+##   38   2  Wholesale  Consumption  Wages
+##   38   3  Wholesale  Consumption  Wages
+##   38   4  Wholesale  Consumption  Wages
+##   38   5  Wholesale  Consumption  Wages
+##   39   1  Wholesale  Consumption  Wages
+##   39   2  Wholesale  Consumption  Wages
+##   39   3  Wholesale  Consumption  Wages
+##   39   4  Wholesale  Consumption  Wages
+##   39   5  Wholesale  Consumption  Wages
+##   40   1  Wholesale  Consumption  Wages
+##   40   2  Wholesale  Consumption  Wages
+##   40   3  Wholesale  Consumption  Wages
+##   40   4  Wholesale  Consumption  Wages
+##   40   5  Wholesale  Consumption  Wages
+##   41   1  Wholesale  Consumption  Wages
+##   41   2  Wholesale  Consumption  Wages
+##   41   3  Wholesale  Consumption  Wages
+##   41   4  Wholesale  Consumption  Wages
+##   41   5  Wholesale  Consumption  Wages
+##   42   1  Wholesale  Consumption  Wages
+##   42   2  Wholesale  Consumption  Wages
+##   42   3  Wholesale  Consumption  Wages
+##   42   4  Wholesale  Consumption  Wages
+##   42   5  Wholesale  Consumption  Wages
+##   43   1  Wholesale  Consumption  Wages
+##   43   2  Wholesale  Consumption  Wages
+##   43   3  Wholesale  Consumption  Wages
+##   43   4  Wholesale  Consumption  Wages
+##   43   5  Wholesale  Consumption  Wages
+##   44   1  Wholesale  Consumption  Wages
+##   44   2  Wholesale  Consumption  Wages
+##   44   3  Wholesale  Consumption  Wages
+##   44   4  Wholesale  Consumption  Wages
+##   44   5  Wholesale  Consumption  Wages
+##   45   1  Wholesale  Consumption  Wages
+##   45   2  Wholesale  Consumption  Wages
+##   45   3  Wholesale  Consumption  Wages
+##   45   4  Wholesale  Consumption  Wages
+##   45   5  Wholesale  Consumption  Wages
+##   46   1  Wholesale  Consumption  Wages
+##   46   2  Wholesale  Consumption  Wages
+##   46   3  Wholesale  Consumption  Wages
+##   46   4  Wholesale  Consumption  Wages
+##   46   5  Wholesale  Consumption  Wages
+##   47   1  Wholesale  Consumption  Wages
+##   47   2  Wholesale  Consumption  Wages
+##   47   3  Wholesale  Consumption  Wages
+##   47   4  Wholesale  Consumption  Wages
+##   47   5  Wholesale  Consumption  Wages
+##   48   1  Wholesale  Consumption  Wages
+##   48   2  Wholesale  Consumption  Wages
+##   48   3  Wholesale  Consumption  Wages
+##   48   4  Wholesale  Consumption  Wages
+##   48   5  Wholesale  Consumption  Wages
+##   49   1  Wholesale  Consumption  Wages
+##   49   2  Wholesale  Consumption  Wages
+##   49   3  Wholesale  Consumption  Wages
+##   49   4  Wholesale  Consumption  Wages
+##   49   5  Wholesale  Consumption  Wages
+##   50   1  Wholesale  Consumption  Wages
+##   50   2  Wholesale  Consumption  Wages
+##   50   3  Wholesale  Consumption  Wages
+##   50   4  Wholesale  Consumption  Wages
+##   50   5  Wholesale  Consumption  Wages</code></pre>
+<pre class="r"><code>Series &lt;- complete(MiceData,1)
+
+Series &lt;- cbind(Dates, Series)
+Series &lt;- xts(x = Series[,-1],order.by = Series$Dates)
+
+autoplot.zoo(Series)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre class="r"><code>names(Loans) &lt;- c(&quot;Date&quot;,&quot;Loans&quot;,&quot;CrdtCons&quot;,&quot;Lnd4House&quot;,&quot;Other&quot;)
+MiceData &lt;- mice(Loans[,-1],m=5,maxit=50,meth=&#39;pmm&#39;,seed=500)</code></pre>
+<pre><code>## 
+##  iter imp variable
+##   1   1  Loans  CrdtCons  Lnd4House  Other
+##   1   2  Loans  CrdtCons  Lnd4House  Other
+##   1   3  Loans  CrdtCons  Lnd4House  Other
+##   1   4  Loans  CrdtCons  Lnd4House  Other
+##   1   5  Loans  CrdtCons  Lnd4House  Other
+##   2   1  Loans  CrdtCons  Lnd4House  Other
+##   2   2  Loans  CrdtCons  Lnd4House  Other
+##   2   3  Loans  CrdtCons  Lnd4House  Other
+##   2   4  Loans  CrdtCons  Lnd4House  Other
+##   2   5  Loans  CrdtCons  Lnd4House  Other
+##   3   1  Loans  CrdtCons  Lnd4House  Other
+##   3   2  Loans  CrdtCons  Lnd4House  Other
+##   3   3  Loans  CrdtCons  Lnd4House  Other
+##   3   4  Loans  CrdtCons  Lnd4House  Other
+##   3   5  Loans  CrdtCons  Lnd4House  Other
+##   4   1  Loans  CrdtCons  Lnd4House  Other
+##   4   2  Loans  CrdtCons  Lnd4House  Other
+##   4   3  Loans  CrdtCons  Lnd4House  Other
+##   4   4  Loans  CrdtCons  Lnd4House  Other
+##   4   5  Loans  CrdtCons  Lnd4House  Other
+##   5   1  Loans  CrdtCons  Lnd4House  Other
+##   5   2  Loans  CrdtCons  Lnd4House  Other
+##   5   3  Loans  CrdtCons  Lnd4House  Other
+##   5   4  Loans  CrdtCons  Lnd4House  Other
+##   5   5  Loans  CrdtCons  Lnd4House  Other
+##   6   1  Loans  CrdtCons  Lnd4House  Other
+##   6   2  Loans  CrdtCons  Lnd4House  Other
+##   6   3  Loans  CrdtCons  Lnd4House  Other
+##   6   4  Loans  CrdtCons  Lnd4House  Other
+##   6   5  Loans  CrdtCons  Lnd4House  Other
+##   7   1  Loans  CrdtCons  Lnd4House  Other
+##   7   2  Loans  CrdtCons  Lnd4House  Other
+##   7   3  Loans  CrdtCons  Lnd4House  Other
+##   7   4  Loans  CrdtCons  Lnd4House  Other
+##   7   5  Loans  CrdtCons  Lnd4House  Other
+##   8   1  Loans  CrdtCons  Lnd4House  Other
+##   8   2  Loans  CrdtCons  Lnd4House  Other
+##   8   3  Loans  CrdtCons  Lnd4House  Other
+##   8   4  Loans  CrdtCons  Lnd4House  Other
+##   8   5  Loans  CrdtCons  Lnd4House  Other
+##   9   1  Loans  CrdtCons  Lnd4House  Other
+##   9   2  Loans  CrdtCons  Lnd4House  Other
+##   9   3  Loans  CrdtCons  Lnd4House  Other
+##   9   4  Loans  CrdtCons  Lnd4House  Other
+##   9   5  Loans  CrdtCons  Lnd4House  Other
+##   10   1  Loans  CrdtCons  Lnd4House  Other
+##   10   2  Loans  CrdtCons  Lnd4House  Other
+##   10   3  Loans  CrdtCons  Lnd4House  Other
+##   10   4  Loans  CrdtCons  Lnd4House  Other
+##   10   5  Loans  CrdtCons  Lnd4House  Other
+##   11   1  Loans  CrdtCons  Lnd4House  Other
+##   11   2  Loans  CrdtCons  Lnd4House  Other
+##   11   3  Loans  CrdtCons  Lnd4House  Other
+##   11   4  Loans  CrdtCons  Lnd4House  Other
+##   11   5  Loans  CrdtCons  Lnd4House  Other
+##   12   1  Loans  CrdtCons  Lnd4House  Other
+##   12   2  Loans  CrdtCons  Lnd4House  Other
+##   12   3  Loans  CrdtCons  Lnd4House  Other
+##   12   4  Loans  CrdtCons  Lnd4House  Other
+##   12   5  Loans  CrdtCons  Lnd4House  Other
+##   13   1  Loans  CrdtCons  Lnd4House  Other
+##   13   2  Loans  CrdtCons  Lnd4House  Other
+##   13   3  Loans  CrdtCons  Lnd4House  Other
+##   13   4  Loans  CrdtCons  Lnd4House  Other
+##   13   5  Loans  CrdtCons  Lnd4House  Other
+##   14   1  Loans  CrdtCons  Lnd4House  Other
+##   14   2  Loans  CrdtCons  Lnd4House  Other
+##   14   3  Loans  CrdtCons  Lnd4House  Other
+##   14   4  Loans  CrdtCons  Lnd4House  Other
+##   14   5  Loans  CrdtCons  Lnd4House  Other
+##   15   1  Loans  CrdtCons  Lnd4House  Other
+##   15   2  Loans  CrdtCons  Lnd4House  Other
+##   15   3  Loans  CrdtCons  Lnd4House  Other
+##   15   4  Loans  CrdtCons  Lnd4House  Other
+##   15   5  Loans  CrdtCons  Lnd4House  Other
+##   16   1  Loans  CrdtCons  Lnd4House  Other
+##   16   2  Loans  CrdtCons  Lnd4House  Other
+##   16   3  Loans  CrdtCons  Lnd4House  Other
+##   16   4  Loans  CrdtCons  Lnd4House  Other
+##   16   5  Loans  CrdtCons  Lnd4House  Other
+##   17   1  Loans  CrdtCons  Lnd4House  Other
+##   17   2  Loans  CrdtCons  Lnd4House  Other
+##   17   3  Loans  CrdtCons  Lnd4House  Other
+##   17   4  Loans  CrdtCons  Lnd4House  Other
+##   17   5  Loans  CrdtCons  Lnd4House  Other
+##   18   1  Loans  CrdtCons  Lnd4House  Other
+##   18   2  Loans  CrdtCons  Lnd4House  Other
+##   18   3  Loans  CrdtCons  Lnd4House  Other
+##   18   4  Loans  CrdtCons  Lnd4House  Other
+##   18   5  Loans  CrdtCons  Lnd4House  Other
+##   19   1  Loans  CrdtCons  Lnd4House  Other
+##   19   2  Loans  CrdtCons  Lnd4House  Other
+##   19   3  Loans  CrdtCons  Lnd4House  Other
+##   19   4  Loans  CrdtCons  Lnd4House  Other
+##   19   5  Loans  CrdtCons  Lnd4House  Other
+##   20   1  Loans  CrdtCons  Lnd4House  Other
+##   20   2  Loans  CrdtCons  Lnd4House  Other
+##   20   3  Loans  CrdtCons  Lnd4House  Other
+##   20   4  Loans  CrdtCons  Lnd4House  Other
+##   20   5  Loans  CrdtCons  Lnd4House  Other
+##   21   1  Loans  CrdtCons  Lnd4House  Other
+##   21   2  Loans  CrdtCons  Lnd4House  Other
+##   21   3  Loans  CrdtCons  Lnd4House  Other
+##   21   4  Loans  CrdtCons  Lnd4House  Other
+##   21   5  Loans  CrdtCons  Lnd4House  Other
+##   22   1  Loans  CrdtCons  Lnd4House  Other
+##   22   2  Loans  CrdtCons  Lnd4House  Other
+##   22   3  Loans  CrdtCons  Lnd4House  Other
+##   22   4  Loans  CrdtCons  Lnd4House  Other
+##   22   5  Loans  CrdtCons  Lnd4House  Other
+##   23   1  Loans  CrdtCons  Lnd4House  Other
+##   23   2  Loans  CrdtCons  Lnd4House  Other
+##   23   3  Loans  CrdtCons  Lnd4House  Other
+##   23   4  Loans  CrdtCons  Lnd4House  Other
+##   23   5  Loans  CrdtCons  Lnd4House  Other
+##   24   1  Loans  CrdtCons  Lnd4House  Other
+##   24   2  Loans  CrdtCons  Lnd4House  Other
+##   24   3  Loans  CrdtCons  Lnd4House  Other
+##   24   4  Loans  CrdtCons  Lnd4House  Other
+##   24   5  Loans  CrdtCons  Lnd4House  Other
+##   25   1  Loans  CrdtCons  Lnd4House  Other
+##   25   2  Loans  CrdtCons  Lnd4House  Other
+##   25   3  Loans  CrdtCons  Lnd4House  Other
+##   25   4  Loans  CrdtCons  Lnd4House  Other
+##   25   5  Loans  CrdtCons  Lnd4House  Other
+##   26   1  Loans  CrdtCons  Lnd4House  Other
+##   26   2  Loans  CrdtCons  Lnd4House  Other
+##   26   3  Loans  CrdtCons  Lnd4House  Other
+##   26   4  Loans  CrdtCons  Lnd4House  Other
+##   26   5  Loans  CrdtCons  Lnd4House  Other
+##   27   1  Loans  CrdtCons  Lnd4House  Other
+##   27   2  Loans  CrdtCons  Lnd4House  Other
+##   27   3  Loans  CrdtCons  Lnd4House  Other
+##   27   4  Loans  CrdtCons  Lnd4House  Other
+##   27   5  Loans  CrdtCons  Lnd4House  Other
+##   28   1  Loans  CrdtCons  Lnd4House  Other
+##   28   2  Loans  CrdtCons  Lnd4House  Other
+##   28   3  Loans  CrdtCons  Lnd4House  Other
+##   28   4  Loans  CrdtCons  Lnd4House  Other
+##   28   5  Loans  CrdtCons  Lnd4House  Other
+##   29   1  Loans  CrdtCons  Lnd4House  Other
+##   29   2  Loans  CrdtCons  Lnd4House  Other
+##   29   3  Loans  CrdtCons  Lnd4House  Other
+##   29   4  Loans  CrdtCons  Lnd4House  Other
+##   29   5  Loans  CrdtCons  Lnd4House  Other
+##   30   1  Loans  CrdtCons  Lnd4House  Other
+##   30   2  Loans  CrdtCons  Lnd4House  Other
+##   30   3  Loans  CrdtCons  Lnd4House  Other
+##   30   4  Loans  CrdtCons  Lnd4House  Other
+##   30   5  Loans  CrdtCons  Lnd4House  Other
+##   31   1  Loans  CrdtCons  Lnd4House  Other
+##   31   2  Loans  CrdtCons  Lnd4House  Other
+##   31   3  Loans  CrdtCons  Lnd4House  Other
+##   31   4  Loans  CrdtCons  Lnd4House  Other
+##   31   5  Loans  CrdtCons  Lnd4House  Other
+##   32   1  Loans  CrdtCons  Lnd4House  Other
+##   32   2  Loans  CrdtCons  Lnd4House  Other
+##   32   3  Loans  CrdtCons  Lnd4House  Other
+##   32   4  Loans  CrdtCons  Lnd4House  Other
+##   32   5  Loans  CrdtCons  Lnd4House  Other
+##   33   1  Loans  CrdtCons  Lnd4House  Other
+##   33   2  Loans  CrdtCons  Lnd4House  Other
+##   33   3  Loans  CrdtCons  Lnd4House  Other
+##   33   4  Loans  CrdtCons  Lnd4House  Other
+##   33   5  Loans  CrdtCons  Lnd4House  Other
+##   34   1  Loans  CrdtCons  Lnd4House  Other
+##   34   2  Loans  CrdtCons  Lnd4House  Other
+##   34   3  Loans  CrdtCons  Lnd4House  Other
+##   34   4  Loans  CrdtCons  Lnd4House  Other
+##   34   5  Loans  CrdtCons  Lnd4House  Other
+##   35   1  Loans  CrdtCons  Lnd4House  Other
+##   35   2  Loans  CrdtCons  Lnd4House  Other
+##   35   3  Loans  CrdtCons  Lnd4House  Other
+##   35   4  Loans  CrdtCons  Lnd4House  Other
+##   35   5  Loans  CrdtCons  Lnd4House  Other
+##   36   1  Loans  CrdtCons  Lnd4House  Other
+##   36   2  Loans  CrdtCons  Lnd4House  Other
+##   36   3  Loans  CrdtCons  Lnd4House  Other
+##   36   4  Loans  CrdtCons  Lnd4House  Other
+##   36   5  Loans  CrdtCons  Lnd4House  Other
+##   37   1  Loans  CrdtCons  Lnd4House  Other
+##   37   2  Loans  CrdtCons  Lnd4House  Other
+##   37   3  Loans  CrdtCons  Lnd4House  Other
+##   37   4  Loans  CrdtCons  Lnd4House  Other
+##   37   5  Loans  CrdtCons  Lnd4House  Other
+##   38   1  Loans  CrdtCons  Lnd4House  Other
+##   38   2  Loans  CrdtCons  Lnd4House  Other
+##   38   3  Loans  CrdtCons  Lnd4House  Other
+##   38   4  Loans  CrdtCons  Lnd4House  Other
+##   38   5  Loans  CrdtCons  Lnd4House  Other
+##   39   1  Loans  CrdtCons  Lnd4House  Other
+##   39   2  Loans  CrdtCons  Lnd4House  Other
+##   39   3  Loans  CrdtCons  Lnd4House  Other
+##   39   4  Loans  CrdtCons  Lnd4House  Other
+##   39   5  Loans  CrdtCons  Lnd4House  Other
+##   40   1  Loans  CrdtCons  Lnd4House  Other
+##   40   2  Loans  CrdtCons  Lnd4House  Other
+##   40   3  Loans  CrdtCons  Lnd4House  Other
+##   40   4  Loans  CrdtCons  Lnd4House  Other
+##   40   5  Loans  CrdtCons  Lnd4House  Other
+##   41   1  Loans  CrdtCons  Lnd4House  Other
+##   41   2  Loans  CrdtCons  Lnd4House  Other
+##   41   3  Loans  CrdtCons  Lnd4House  Other
+##   41   4  Loans  CrdtCons  Lnd4House  Other
+##   41   5  Loans  CrdtCons  Lnd4House  Other
+##   42   1  Loans  CrdtCons  Lnd4House  Other
+##   42   2  Loans  CrdtCons  Lnd4House  Other
+##   42   3  Loans  CrdtCons  Lnd4House  Other
+##   42   4  Loans  CrdtCons  Lnd4House  Other
+##   42   5  Loans  CrdtCons  Lnd4House  Other
+##   43   1  Loans  CrdtCons  Lnd4House  Other
+##   43   2  Loans  CrdtCons  Lnd4House  Other
+##   43   3  Loans  CrdtCons  Lnd4House  Other
+##   43   4  Loans  CrdtCons  Lnd4House  Other
+##   43   5  Loans  CrdtCons  Lnd4House  Other
+##   44   1  Loans  CrdtCons  Lnd4House  Other
+##   44   2  Loans  CrdtCons  Lnd4House  Other
+##   44   3  Loans  CrdtCons  Lnd4House  Other
+##   44   4  Loans  CrdtCons  Lnd4House  Other
+##   44   5  Loans  CrdtCons  Lnd4House  Other
+##   45   1  Loans  CrdtCons  Lnd4House  Other
+##   45   2  Loans  CrdtCons  Lnd4House  Other
+##   45   3  Loans  CrdtCons  Lnd4House  Other
+##   45   4  Loans  CrdtCons  Lnd4House  Other
+##   45   5  Loans  CrdtCons  Lnd4House  Other
+##   46   1  Loans  CrdtCons  Lnd4House  Other
+##   46   2  Loans  CrdtCons  Lnd4House  Other
+##   46   3  Loans  CrdtCons  Lnd4House  Other
+##   46   4  Loans  CrdtCons  Lnd4House  Other
+##   46   5  Loans  CrdtCons  Lnd4House  Other
+##   47   1  Loans  CrdtCons  Lnd4House  Other
+##   47   2  Loans  CrdtCons  Lnd4House  Other
+##   47   3  Loans  CrdtCons  Lnd4House  Other
+##   47   4  Loans  CrdtCons  Lnd4House  Other
+##   47   5  Loans  CrdtCons  Lnd4House  Other
+##   48   1  Loans  CrdtCons  Lnd4House  Other
+##   48   2  Loans  CrdtCons  Lnd4House  Other
+##   48   3  Loans  CrdtCons  Lnd4House  Other
+##   48   4  Loans  CrdtCons  Lnd4House  Other
+##   48   5  Loans  CrdtCons  Lnd4House  Other
+##   49   1  Loans  CrdtCons  Lnd4House  Other
+##   49   2  Loans  CrdtCons  Lnd4House  Other
+##   49   3  Loans  CrdtCons  Lnd4House  Other
+##   49   4  Loans  CrdtCons  Lnd4House  Other
+##   49   5  Loans  CrdtCons  Lnd4House  Other
+##   50   1  Loans  CrdtCons  Lnd4House  Other
+##   50   2  Loans  CrdtCons  Lnd4House  Other
+##   50   3  Loans  CrdtCons  Lnd4House  Other
+##   50   4  Loans  CrdtCons  Lnd4House  Other
+##   50   5  Loans  CrdtCons  Lnd4House  Other</code></pre>
+<pre class="r"><code>Loans &lt;- cbind(Loans$Date,complete(MiceData, 1))
+names(Loans) &lt;- c(&quot;Date&quot;,&quot;Loans&quot;,&quot;CrdtCons&quot;,&quot;Lnd4House&quot;,&quot;Other&quot;)
+
+#Aggregate monthly data to quarterly
+Loans &lt;- xts(x = Loans[,-1],order.by = Loans$Date)
+Loanstemp &lt;- apply.quarterly(Loans[,1], FUN = &quot;sum&quot;, na.rm = FALSE)
+for (i in 2:ncol(Loans)) {
+  tempLoan &lt;- apply.quarterly(Loans[,i], FUN = &quot;sum&quot;, na.rm = FALSE)
+  Loanstemp &lt;- cbind(Loanstemp, tempLoan)
+}</code></pre>
+</div>
+<div id="detrending-and-seasonality" class="section level1">
+<h1>Detrending and seasonality</h1>
+<pre class="r"><code>library(aTSA)</code></pre>
+<pre><code>## Warning: package &#39;aTSA&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## 
+## Attaching package: &#39;aTSA&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:graphics&#39;:
+## 
+##     identify</code></pre>
+<pre class="r"><code>library(mFilter)</code></pre>
+<pre><code>## Warning: package &#39;mFilter&#39; was built under R version 4.0.3</code></pre>
+<pre class="r"><code>Series &lt;- ts(Series,start=c(1995,1),frequency = 4)
+Noseason &lt;- Series
+
+for (var in 1:ncol(Series)){
+  seas &lt;- decompose(Series[,var])
+  Noseason[,var] &lt;- Series[,var] - seas$seasonal
+}
+
+#Dickey-fuller tests
+# adf.test(Noseason[,1])
+# adf.test(Noseason[,2])
+# adf.test(Noseason[,3])
+
+Stac &lt;- diff(Noseason)
+
+#Data seems to be stationary
+adf.test(Stac[,1])</code></pre>
+<pre><code>## Augmented Dickey-Fuller Test 
+## alternative: stationary 
+##  
+## Type 1: no drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -20.77    0.01
+## [2,]   1  -8.81    0.01
+## [3,]   2  -5.67    0.01
+## [4,]   3  -5.65    0.01
+## Type 2: with drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -20.68    0.01
+## [2,]   1  -8.79    0.01
+## [3,]   2  -5.67    0.01
+## [4,]   3  -5.69    0.01
+## Type 3: with drift and trend 
+##      lag    ADF p.value
+## [1,]   0 -20.62    0.01
+## [2,]   1  -8.77    0.01
+## [3,]   2  -5.65    0.01
+## [4,]   3  -5.65    0.01
+## ---- 
+## Note: in fact, p.value = 0.01 means p.value &lt;= 0.01</code></pre>
+<pre class="r"><code>adf.test(Stac[,2])</code></pre>
+<pre><code>## Augmented Dickey-Fuller Test 
+## alternative: stationary 
+##  
+## Type 1: no drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -16.19    0.01
+## [2,]   1 -11.60    0.01
+## [3,]   2  -9.34    0.01
+## [4,]   3  -6.84    0.01
+## Type 2: with drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -16.35    0.01
+## [2,]   1 -12.00    0.01
+## [3,]   2  -9.93    0.01
+## [4,]   3  -7.58    0.01
+## Type 3: with drift and trend 
+##      lag    ADF p.value
+## [1,]   0 -16.26    0.01
+## [2,]   1 -11.93    0.01
+## [3,]   2  -9.90    0.01
+## [4,]   3  -7.57    0.01
+## ---- 
+## Note: in fact, p.value = 0.01 means p.value &lt;= 0.01</code></pre>
+<pre class="r"><code>adf.test(Stac[,3])</code></pre>
+<pre><code>## Augmented Dickey-Fuller Test 
+## alternative: stationary 
+##  
+## Type 1: no drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -16.17    0.01
+## [2,]   1 -11.50    0.01
+## [3,]   2  -8.58    0.01
+## [4,]   3  -7.41    0.01
+## Type 2: with drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -16.20    0.01
+## [2,]   1 -11.64    0.01
+## [3,]   2  -8.82    0.01
+## [4,]   3  -7.81    0.01
+## Type 3: with drift and trend 
+##      lag    ADF p.value
+## [1,]   0 -16.14    0.01
+## [2,]   1 -11.64    0.01
+## [3,]   2  -8.88    0.01
+## [4,]   3  -7.91    0.01
+## ---- 
+## Note: in fact, p.value = 0.01 means p.value &lt;= 0.01</code></pre>
+<pre class="r"><code>plot(Noseason[,2])</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>plot(Stac[,2])</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-2-2.png" width="672" /></p>
+</div>
+<div id="estimating-model" class="section level1">
+<h1>Estimating model</h1>
+<pre class="r"><code>library(forecast)</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;quantmod&#39;:
+##   method            from
+##   as.zoo.data.frame zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;forecast&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:aTSA&#39;:
+## 
+##     forecast</code></pre>
+<pre><code>## The following object is masked from &#39;package:DescTools&#39;:
+## 
+##     BoxCox</code></pre>
+<pre class="r"><code>library(vars)</code></pre>
+<pre><code>## Warning: package &#39;vars&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## Loading required package: MASS</code></pre>
+<pre><code>## Loading required package: strucchange</code></pre>
+<pre><code>## Warning: package &#39;strucchange&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## Loading required package: sandwich</code></pre>
+<pre><code>## Warning: package &#39;sandwich&#39; was built under R version 4.0.3</code></pre>
+<pre><code>## Loading required package: urca</code></pre>
+<pre><code>## Loading required package: lmtest</code></pre>
+<pre><code>## 
+## Attaching package: &#39;vars&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:aTSA&#39;:
+## 
+##     arch.test</code></pre>
+<pre><code>## The following object is masked from &#39;package:DescTools&#39;:
+## 
+##     Phi</code></pre>
+<pre class="r"><code>library(car)</code></pre>
+<pre><code>## Loading required package: carData</code></pre>
+<pre><code>## 
+## Attaching package: &#39;car&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:DescTools&#39;:
+## 
+##     Recode</code></pre>
+<pre class="r"><code>#Visualizing the data to get a grasp on what ARIMA model would fit the most
+acf(Stac[,2])</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>pacf(Stac[,2], lag.max = 50)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-3-2.png" width="672" /></p>
+<pre class="r"><code>unimodel &lt;- auto.arima(Stac[,2],ic = &#39;aic&#39;, seasonal = FALSE)
+plot(forecast(unimodel,h=20))</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-3-3.png" width="672" /></p>
+<pre class="r"><code>summary(unimodel)</code></pre>
+<pre><code>## Series: Stac[, 2] 
+## ARIMA(0,0,1) with non-zero mean 
+## 
+## Coefficients:
+##           ma1      mean
+##       -0.7527  837.4082
+## s.e.   0.0654  193.3513
+## 
+## sigma^2 estimated as 56083620:  log likelihood=-992.06
+## AIC=1990.12   AICc=1990.38   BIC=1997.81
+## 
+## Training set error measures:
+##                    ME    RMSE      MAE      MPE     MAPE      MASE        ACF1
+## Training set 48.46246 7410.48 4249.511 193.2061 340.6203 0.7027023 -0.04297589</code></pre>
+<pre class="r"><code>durbinWatsonTest(as.numeric(unimodel$residuals))</code></pre>
+<pre><code>## [1] 2.085705</code></pre>
+<pre class="r"><code>adf.test(as.numeric(unimodel$residuals))</code></pre>
+<pre><code>## Augmented Dickey-Fuller Test 
+## alternative: stationary 
+##  
+## Type 1: no drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -10.12    0.01
+## [2,]   1  -7.22    0.01
+## [3,]   2  -5.54    0.01
+## [4,]   3  -4.25    0.01
+## Type 2: with drift no trend 
+##      lag    ADF p.value
+## [1,]   0 -10.07    0.01
+## [2,]   1  -7.18    0.01
+## [3,]   2  -5.50    0.01
+## [4,]   3  -4.23    0.01
+## Type 3: with drift and trend 
+##      lag    ADF p.value
+## [1,]   0 -10.03    0.01
+## [2,]   1  -7.16    0.01
+## [3,]   2  -5.52    0.01
+## [4,]   3  -4.25    0.01
+## ---- 
+## Note: in fact, p.value = 0.01 means p.value &lt;= 0.01</code></pre>
+<pre class="r"><code>#Not cointegrated
+
+VARnumber &lt;- VARselect(Stac, lag.max =6)
+VARmodel &lt;- VAR(Stac, p=as.numeric(VARnumber$selection[1]), ic = c(&quot;aic&quot;))
+
+#Looking for a value close to 2 to test residuals autocorrelation
+durbinWatsonTest(VARmodel$varresult$Consumption$residuals)</code></pre>
+<pre><code>## [1] 1.978096</code></pre>
+<pre class="r"><code>adf.test(VARmodel$varresult$Consumption$residuals)</code></pre>
+<pre><code>## Augmented Dickey-Fuller Test 
+## alternative: stationary 
+##  
+## Type 1: no drift no trend 
+##      lag   ADF p.value
+## [1,]   0 -9.44    0.01
+## [2,]   1 -7.00    0.01
+## [3,]   2 -5.83    0.01
+## [4,]   3 -5.25    0.01
+## Type 2: with drift no trend 
+##      lag   ADF p.value
+## [1,]   0 -9.39    0.01
+## [2,]   1 -6.96    0.01
+## [3,]   2 -5.80    0.01
+## [4,]   3 -5.22    0.01
+## Type 3: with drift and trend 
+##      lag   ADF p.value
+## [1,]   0 -9.35    0.01
+## [2,]   1 -6.93    0.01
+## [3,]   2 -5.77    0.01
+## [4,]   3 -5.20    0.01
+## ---- 
+## Note: in fact, p.value = 0.01 means p.value &lt;= 0.01</code></pre>
+<pre class="r"><code>#Not cointegrated</code></pre>
+</div>
+<div id="building-model-including-loans-data" class="section level1">
+<h1>Building model including Loans data</h1>
+<pre class="r"><code>library(aTSA)
+library(mFilter)
+
+a &lt;- nrow(Series) - nrow(Loanstemp)
+Fullseries &lt;- cbind(Series[-c(1:a),],Loanstemp)
+Fullseries &lt;- ts(Fullseries,start=c(2003,1),frequency = 4)
+
+Noseason &lt;- Fullseries
+
+for (var in 1:ncol(Fullseries)){
+  seas &lt;- decompose(Fullseries[,var])
+  Noseason[,var] &lt;- Fullseries[,var] - seas$seasonal
+}
+
+#Dickey-fuller tests like previously
+
+Stac &lt;- diff(diff(Noseason))
+
+# adfTest(Stac[,1])
+# adfTest(Stac[,2])
+# adfTest(Stac[,3])
+# adfTest(Stac[,4])
+# adfTest(Stac[,5])
+# adfTest(Stac[,6])
+# adfTest(Stac[,7])
+
+#Data seems to be stationary according to a new dickey fuller test
+
+VARnumber &lt;- VARselect(Stac, lag.max =6)
+VARmodel &lt;- VAR(Stac, p=as.numeric(VARnumber$selection[1]), ic = c(&quot;aic&quot;))
+
+VARmodel$varresult$Consumption</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = y ~ -1 + ., data = datamat)
+## 
+## Coefficients:
+##   Wholesale.l1  Consumption.l1        Wages.l1        Loans.l1     CrdtCons.l1  
+##      -72.65718        -1.02389        -0.17352         0.24734         2.98606  
+##   Lnd4House.l1        Other.l1    Wholesale.l2  Consumption.l2        Wages.l2  
+##        0.29843        -8.54611       479.81016        -0.19560        -0.43292  
+##       Loans.l2     CrdtCons.l2    Lnd4House.l2        Other.l2    Wholesale.l3  
+##        2.04526        -0.83245         4.59325        -9.30061      1194.82898  
+## Consumption.l3        Wages.l3        Loans.l3     CrdtCons.l3    Lnd4House.l3  
+##       -1.44643         0.15047         3.91779         2.91618        -4.49443  
+##       Other.l3    Wholesale.l4  Consumption.l4        Wages.l4        Loans.l4  
+##       -6.75852       504.94859        -0.50378        -0.17900         4.74734  
+##    CrdtCons.l4    Lnd4House.l4        Other.l4    Wholesale.l5  Consumption.l5  
+##        1.34522        -0.23014        -7.31619       -33.70238         0.12917  
+##       Wages.l5        Loans.l5     CrdtCons.l5    Lnd4House.l5        Other.l5  
+##       -0.41927         3.27839         0.05578        -0.64873        -7.06642  
+##   Wholesale.l6  Consumption.l6        Wages.l6        Loans.l6     CrdtCons.l6  
+##     -921.57788         0.74183        -0.44803         0.68844         0.96137  
+##   Lnd4House.l6        Other.l6           const  
+##       -2.84747        -1.49000        46.62659</code></pre>
+<pre class="r"><code>#Looking for a value close to 2 to test residuals autocorrelation
+durbinWatsonTest(VARmodel$varresult$Consumption$residuals)</code></pre>
+<pre><code>## [1] 1.668622</code></pre>
+<pre class="r"><code>adf.test(VARmodel$varresult$Consumption$residuals)</code></pre>
+<pre><code>## Augmented Dickey-Fuller Test 
+## alternative: stationary 
+##  
+## Type 1: no drift no trend 
+##      lag   ADF p.value
+## [1,]   0 -6.54    0.01
+## [2,]   1 -7.44    0.01
+## [3,]   2 -5.40    0.01
+## [4,]   3 -3.83    0.01
+## Type 2: with drift no trend 
+##      lag   ADF p.value
+## [1,]   0 -6.48    0.01
+## [2,]   1 -7.38    0.01
+## [3,]   2 -5.35    0.01
+## [4,]   3 -3.79    0.01
+## Type 3: with drift and trend 
+##      lag   ADF p.value
+## [1,]   0 -6.50  0.0100
+## [2,]   1 -7.41  0.0100
+## [3,]   2 -5.42  0.0100
+## [4,]   3 -3.85  0.0226
+## ---- 
+## Note: in fact, p.value = 0.01 means p.value &lt;= 0.01</code></pre>
+<pre class="r"><code>#Not cointegrated</code></pre>
+</div>
