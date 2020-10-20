@@ -14,14 +14,13 @@ output:
 <h2>Open excel file, prepare data</h2>
 <pre class="r"><code>#Libraries
 
-library(DescTools)</code></pre>
-<pre><code>## Warning: package &#39;DescTools&#39; was built under R version 4.0.3</code></pre>
-<pre class="r"><code>library(readxl)
+library(DescTools)
+library(readxl)
 library(xts)
 library(zoo)
-library(mondate)</code></pre>
-<pre><code>## Warning: package &#39;mondate&#39; was built under R version 4.0.3</code></pre>
-<pre class="r"><code>#  &lt;------------------&gt; CONSUMPTION
+library(mondate)
+
+#  &lt;------------------&gt; CONSUMPTION
 
 #Formating the excel file to a data frame
 Cons &lt;- read_xlsx(&quot;CleanExcelData.xlsx&quot;,sheet = 1, col_names = FALSE,na = c(&quot;:&quot;,&quot;;&quot;))
@@ -73,10 +72,8 @@ Wages &lt;- Wages[-1,]
 Wages &lt;- as.data.frame(Wages)
 
 Wages1 &lt;- Wages[,1]
-Wages[] &lt;- lapply(Wages, function(x) as.numeric(as.character(x)))</code></pre>
-<pre><code>## Warning in FUN(X[[i]], ...): NAs introduced by coercion</code></pre>
-<pre><code>## Warning in FUN(X[[i]], ...): NAs introduced by coercion</code></pre>
-<pre class="r"><code>Wages[,1]&lt;- Wages1
+Wages[] &lt;- lapply(Wages, function(x) as.numeric(as.character(x)))
+Wages[,1]&lt;- Wages1
 remove(Wages1)
 
 # nrow(Wages)
@@ -114,7 +111,6 @@ whsl &lt;- apply.quarterly(whsl, FUN = &quot;sum&quot;, na.rm = FALSE)
 Data &lt;- cbind(whsl$Wholesale,Data)  
   
 autoplot.zoo(Data)</code></pre>
-<pre><code>## Warning: Removed 1 row(s) containing missing values (geom_path).</code></pre>
 <p><img src="index_files/figure-html/setup-1.png" width="672" /></p>
 </div>
 <div id="visualizing-my-data" class="section level1">
@@ -124,24 +120,18 @@ autoplot.zoo(Data)</code></pre>
 ggplot(Wages, aes(y=Germany)) + 
   geom_boxplot() +
   theme_minimal()</code></pre>
-<pre><code>## Warning: Removed 5 rows containing non-finite values (stat_boxplot).</code></pre>
 <p><img src="index_files/figure-html/plots-1.png" width="672" /></p>
 <pre class="r"><code>autoplot.zoo(Cons)</code></pre>
-<pre><code>## Warning in data.frame(c(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L, 11L, 12L, : row
-## names were found from a short variable and have been discarded</code></pre>
-<pre><code>## Warning: Removed 1 row(s) containing missing values (geom_path).</code></pre>
 <p><img src="index_files/figure-html/plots-2.png" width="672" /></p>
 <pre class="r"><code>ggplot(Cons, aes(y=Cons[,1])) + 
   geom_boxplot() +
   theme_minimal()</code></pre>
 <p><img src="index_files/figure-html/plots-3.png" width="672" /></p>
 <pre class="r"><code>autoplot.zoo(whsl)</code></pre>
-<pre><code>## Warning: Removed 1 row(s) containing missing values (geom_path).</code></pre>
 <p><img src="index_files/figure-html/plots-4.png" width="672" /></p>
 <pre class="r"><code>ggplot(whsl, aes(y=whsl$Wholesale)) + 
   geom_boxplot() +
   theme_minimal()</code></pre>
-<pre><code>## Warning: Removed 7 rows containing non-finite values (stat_boxplot).</code></pre>
 <p><img src="index_files/figure-html/plots-5.png" width="672" /></p>
 </div>
 <div id="outliers" class="section level1">
@@ -171,9 +161,8 @@ for (col in 2:ncol(Loans)){
 </div>
 <div id="predicting-missing-values" class="section level1">
 <h1>Predicting missing values</h1>
-<pre class="r"><code>library(mice)</code></pre>
-<pre><code>## Warning: package &#39;mice&#39; was built under R version 4.0.3</code></pre>
-<pre class="r"><code># I used MICE to predict missing values as I did not want to lose all the information and continuity of my original data set
+<pre class="r"><code>library(mice)
+# I used MICE to predict missing values as I did not want to lose all the information and continuity of my original data set
 
 #Also MICE seemed to be a verified way to predict missing values according to the reading I did
 
@@ -709,11 +698,10 @@ for (i in 2:ncol(Loans)) {
 </div>
 <div id="detrending-and-seasonality" class="section level1">
 <h1>Detrending and seasonality</h1>
-<pre class="r"><code>library(aTSA)</code></pre>
-<pre><code>## Warning: package &#39;aTSA&#39; was built under R version 4.0.3</code></pre>
-<pre class="r"><code>library(mFilter)</code></pre>
-<pre><code>## Warning: package &#39;mFilter&#39; was built under R version 4.0.3</code></pre>
-<pre class="r"><code>Series &lt;- ts(Series,start=c(1995,1),frequency = 4)
+<pre class="r"><code>library(aTSA)
+library(mFilter)
+
+Series &lt;- ts(Series,start=c(1995,1),frequency = 4)
 Noseason &lt;- Series
 
 for (var in 1:ncol(Series)){
@@ -809,11 +797,8 @@ adf.test(Stac[,1])</code></pre>
 <div id="estimating-model" class="section level1">
 <h1>Estimating model</h1>
 <pre class="r"><code>library(forecast)
-library(vars)</code></pre>
-<pre><code>## Warning: package &#39;vars&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## Warning: package &#39;strucchange&#39; was built under R version 4.0.3</code></pre>
-<pre><code>## Warning: package &#39;sandwich&#39; was built under R version 4.0.3</code></pre>
-<pre class="r"><code>library(car)
+library(vars)
+library(car)
 
 #Visualizing the data to get a grasp on what ARIMA model would fit the most
 acf(Stac[,2])</code></pre>

@@ -9,7 +9,7 @@ output:
 ---
 
 ##Open excel file, prepare data
-```{r setup, include=TRUE, message=FALSE}
+```{r setup, include=TRUE, message=FALSE, warning=FALSE}
 #Libraries
 
 library(DescTools)
@@ -111,7 +111,7 @@ autoplot.zoo(Data)
 ```
 
 #Visualizing my data
-```{r plots, message=FALSE}
+```{r plots, message=FALSE, warning=FALSE}
 library(ggplot2)
 
 ggplot(Wages, aes(y=Germany)) + 
@@ -131,7 +131,7 @@ ggplot(whsl, aes(y=whsl$Wholesale)) +
 ```
 
 #Outliers
-```{r modelling, message=FALSE}
+```{r modelling, message=FALSE, warning=FALSE}
 #Because of time limitations I will use the IQR method to find and remove outliers
 
 for (col in 1:ncol(Data)){
@@ -158,7 +158,7 @@ for (col in 2:ncol(Loans)){
 ```
 
 #Predicting missing values
-```{r mice, message=FALSE}
+```{r mice, message=FALSE, warning=FALSE}
 library(mice)
 # I used MICE to predict missing values as I did not want to lose all the information and continuity of my original data set
 
@@ -194,7 +194,7 @@ for (i in 2:ncol(Loans)) {
 ```
 
 #Detrending and seasonality
-```{r seasonality, message=FALSE}
+```{r seasonality, message=FALSE, warning=FALSE}
 library(aTSA)
 library(mFilter)
 
@@ -223,7 +223,7 @@ plot(Stac[,2])
 ```
 
 #Estimating model
-```{r model, message=FALSE}
+```{r model, message=FALSE, warning=FALSE}
 library(forecast)
 library(vars)
 library(car)
@@ -252,7 +252,7 @@ adf.test(VARmodel$varresult$Consumption$residuals)
 ```
 
 #Building model including Loans data
-```{r loans, message=FALSE}
+```{r loans, message=FALSE, warning=FALSE}
 library(aTSA)
 library(mFilter)
 
