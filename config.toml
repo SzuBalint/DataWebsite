@@ -116,7 +116,7 @@ disqusShortname = ""
     subtitle = """On this website you will find some of my previous work. It has both infographics and modelling,
     if you have any suggestions, please get in touch with me: bszutor.mfa2021@london.edu"""
     buttonText = "Get Started"
-    url = "blogs"
+    url = "#"
 
 
   # Contact section
