@@ -1,7 +1,7 @@
 # Site settings
 baseURL = "https://bszutorportfolio.netlify.app"
 languageCode = "en-us"
-title = "Portfolio website for Szutor Balint"
+title = "Portfolio website for Balint Szutor"
 theme = "forty"
 
 # Enter your tracking code to enable Google Analytics
@@ -68,8 +68,8 @@ disqusShortname = ""
   [params.banner]
     # To change the background image on the homepage banner, replace 'banner.jpg' in
     # the 'static/img' folder.
-    title = "Hi, welcome to my portfolio"
-    subtitle = "WELCOME TO MY PORTFOLIO."
+    title = "Hi, welcome to my coding journey"
+    subtitle = "TAKE A DIVE INTO MY PROJECTS."
     buttonText = "Let's go"
 
 
