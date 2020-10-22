@@ -115,7 +115,7 @@ disqusShortname = ""
     title = "Exciting projects"
     subtitle = """On this website you will find some of my previous work. It has both infographics and modelling,
     if you have any suggestions, please get in touch with me: bszutor.mfa2021@london.edu 
-    And if you want too see my progress, click this button to take a look on the website I made when I was 8 years old"""
+    \nAnd if you want too see my progress, click this button to take a look on the website I made when I was 8 years old"""
     buttonText = "8 years old Balint's work"
     url = "http://fifaworldcup.gportal.hu/"
 
